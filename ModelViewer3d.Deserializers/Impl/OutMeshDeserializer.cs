@@ -8,102 +8,81 @@ using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Deserializers.Impl
 {
-    public class OutMeshDeserializer : BaseTextMeshDeserializer
+    public class OutMeshDeserializer : IMeshDeserializer
     {
-        protected override Mesh DeserializeImplementation()
+        private class Segment
         {
-            List<List<Int32>> elements = new List<List<Int32>>();
-            List<Point3D> points = new List<Point3D>();
+            public Int32 Number { get; set; }
+            public IList<Int32> Points { get; set; }
+        }
 
-            while (this.LineNumber < this.AllLines.Count)
+        private static readonly Char[] Separators = { ' ', ',', '\t' };
+
+        public Mesh Deserialize(string filePath)
+        {
+            var lines = File.ReadAllLines(filePath).Where(line => line != null && !line.All(Char.IsWhiteSpace));
+
+            List<MeshElement> elements;
+            List<Point3D> points = new List<Point3D>();
+            List<Segment> segments = new List<Segment>();
+
+            foreach (String line in lines)
             {
-                String line = this.AllLines[this.LineNumber++];
                 IList<String> parts = line.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
 
                 if (parts.Count == 3)
                 {
-                    var coords = parts
-                        .Select(coord => Double.Parse(coord, CultureInfo.InvariantCulture))
-                        .ToList();
-
-                    points.Add(new Point3D(coords[0], coords[1], coords[2]));
-                    continue;
+                    points.Add(OutMeshDeserializer.DeserializePoint(parts));
                 }
-
-                if (parts.Count == 9)
+                else if (parts.Count == 9)
                 {
-                    elements.Add(parts.Skip(1).Select(point => Int32.Parse(point, CultureInfo.InvariantCulture)).ToList());
-                    continue;
+                    segments.Add(OutMeshDeserializer.DeserializeSegment(parts));
                 }
-
-                throw new FileFormatException("Invalid data.");
             }
 
-            Mesh mesh = new Mesh
-            {
-                Points = points,
-                Elements = new List<MeshElement>()
-            };
+            Int32 pointsCount = segments.SelectMany(s => s.Points).Distinct().Count();
 
-            var elementsPointsCount = elements.SelectMany(e => e).Distinct().Count();
-
-            if (points.Count == elementsPointsCount)
+            if (points.Count >= pointsCount + segments.Count)
             {
-                foreach (List<Int32> element in elements)
+                elements = new List<MeshElement>();
+                for (Int32 i = 0; i < segments.Count; i++)
                 {
-                    mesh.Elements.Add(new Rectangle
-                    {
-                        X1 = element[0] - 1,
-                        X2 = element[2] - 1,
-                        X3 = element[4] - 1,
-                        X4 = element[6] - 1
-                    });
-                }
-
-                return mesh;
-            }
-            else if (points.Count == elementsPointsCount + elements.Count)
-            {
-                for (Int32 i = 0; i < elements.Count; i++)
-                {
-                    List<Int32> element = elements[i];
-                    Int32 approximationPoint = elementsPointsCount + i;
-                    mesh.Elements.Add(new Rectangle
-                    {
-                        X1 = element[0] - 1,
-                        X2 = element[1] - 1,
-                        X3 = approximationPoint,
-                        X4 = element[7] - 1
-                    });
-                    mesh.Elements.Add(new Rectangle
-                    {
-                        X1 = element[1] - 1,
-                        X2 = element[2] - 1,
-                        X3 = element[3] - 1,
-                        X4 = approximationPoint
-                    });
-                    mesh.Elements.Add(new Rectangle
-                    {
-                        X1 = approximationPoint,
-                        X2 = element[3] - 1,
-                        X3 = element[4] - 1,
-                        X4 = element[5] - 1
-                    });
-                    mesh.Elements.Add(new Rectangle
-                    {
-                        X1 = element[7] - 1,
-                        X2 = approximationPoint,
-                        X3 = element[5] - 1,
-                        X4 = element[6] - 1
-                    });
+                    IList<Int32> pts = segments[i].Points;
+                    Int32 approximationPoint = pointsCount + i;
+                    elements.Add(new Rectangle(pts[0], pts[1], approximationPoint, pts[7]));
+                    elements.Add(new Rectangle(pts[1], pts[2], pts[3], approximationPoint));
+                    elements.Add(new Rectangle(approximationPoint, pts[3], pts[4], pts[5]));
+                    elements.Add(new Rectangle(pts[7], approximationPoint, pts[5], pts[6]));
                 }
             }
             else
             {
-                throw new FileFormatException("Invalid points count in file.");
+                elements = segments
+                   .Select(segment => segment.Points)
+                   .Select(pts => new Rectangle(pts[0], pts[2], pts[4], pts[6]))
+                   .Cast<MeshElement>()
+                   .ToList();
             }
 
-            return mesh;
+            return new Mesh { Elements = elements, Points = points };
+
+        }
+
+        private static Point3D DeserializePoint(IList<String> parts)
+        {
+            return new Point3D(
+                Double.Parse(parts[0], CultureInfo.InvariantCulture),
+                Double.Parse(parts[1], CultureInfo.InvariantCulture),
+                Double.Parse(parts[2], CultureInfo.InvariantCulture));
+        }
+
+        private static Segment DeserializeSegment(IList<String> parts)
+        {
+            return new Segment
+            {
+                Number = Int32.Parse(parts.First(), CultureInfo.InvariantCulture),
+                Points = parts.Skip(1).Select(point => Int32.Parse(point, CultureInfo.InvariantCulture) - 1).ToList()
+            };
         }
     }
 }

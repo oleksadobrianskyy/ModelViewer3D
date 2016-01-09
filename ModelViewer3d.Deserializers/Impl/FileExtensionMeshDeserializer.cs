@@ -13,7 +13,6 @@ namespace ModelViewer3D.Deserializers.Impl
         {
             this.extensionDeserializers = new Dictionary<string, IMeshDeserializer>
             {
-                {".txt", new TxtMeshDeserializer()},
                 {".out", new OutMeshDeserializer()},
                 {".xml", new XmlMeshDeserializer()}
             };

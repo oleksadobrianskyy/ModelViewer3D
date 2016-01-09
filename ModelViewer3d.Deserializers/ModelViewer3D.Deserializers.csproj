@@ -42,10 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IMeshDeserializer.cs" />
-    <Compile Include="Impl\BaseTextMeshDeserializer.cs" />
     <Compile Include="Impl\FileExtensionMeshDeserializer.cs" />
     <Compile Include="Impl\OutMeshDeserializer.cs" />
-    <Compile Include="Impl\TxtMeshDeserializer.cs" />
     <Compile Include="Impl\XmlMeshDeserializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resource.Designer.cs">

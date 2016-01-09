@@ -11,6 +11,17 @@ namespace ModelViewer3D.Models
 
         public Int32 X3 { get; set; }
 
+        public Triangle() : this(-1, -1, -1)
+        {
+        }
+
+        public Triangle(Int32 x1, Int32 x2, Int32 x3)
+        {
+            this.X1 = x1;
+            this.X2 = x2;
+            this.X3 = x3;
+        }
+
         public override IEnumerable<Int32> TriangleIndices
         {
             get
