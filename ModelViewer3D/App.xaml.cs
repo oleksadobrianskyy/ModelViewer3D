@@ -46,8 +46,7 @@ namespace ModelViewer3D
                     filePath, 
                     ServiceLocator.MeshDeserializer, 
                     ServiceLocator.SceneFactory, 
-                    ServiceLocator.WireframeGenerator,
-                    ServiceLocator.VerticesGenerator);
+                    ServiceLocator.WireframeGenerator);
                 window.Show();
             }
             else

@@ -18,8 +18,6 @@ namespace ModelViewer3D
         private static readonly ISceneFactory sceneFactory;
             
         private static readonly IMeshGeometry3DGenerator wireframeGenerator;
-           
-        private static readonly IMeshGeometry3DGenerator verticesGenerator;
 
         static ServiceLocator()
         {
@@ -28,7 +26,6 @@ namespace ModelViewer3D
             meshConverter = new MeshConverter();
             sceneFactory = new SceneFactory(meshConverter);
             wireframeGenerator = new WireframeGenerator();
-            verticesGenerator = new VerticesGenerator();
         }
 
         public static IMeshDeserializer MeshDeserializer
@@ -49,11 +46,6 @@ namespace ModelViewer3D
         public static IMeshGeometry3DGenerator WireframeGenerator
         {
             get { return wireframeGenerator; }
-        }
-
-        public static IMeshGeometry3DGenerator VerticesGenerator
-        {
-            get { return verticesGenerator; }
         }
     }
 }

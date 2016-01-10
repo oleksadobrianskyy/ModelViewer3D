@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -26,42 +27,39 @@ namespace ModelViewer3D
         private const Int32 HiResDpi = 600;
 
         private const Int32 AvgDpi = 300;
-        
+
         #endregion
 
         private readonly IScene scene;
 
         private readonly IMeshGeometry3DGenerator wireframeGenerator;
 
-        private readonly IMeshGeometry3DGenerator verticesGenerator;
+        private readonly TaskScheduler guiTaskScheduler;
 
         private readonly String fileName;
 
         private GeometryModel3D wireframeModel3D;
-
-        private GeometryModel3D positionsModel3D;
 
         private Boolean isTracking;
 
         private Point prevPosition;
 
         public MainWindow(
-            String filePath, 
-            IMeshDeserializer deserializer, 
+            String filePath,
+            IMeshDeserializer deserializer,
             ISceneFactory sceneFactory,
-            IMeshGeometry3DGenerator wireframeGenerator,
-            IMeshGeometry3DGenerator verticesGenerator)
+            IMeshGeometry3DGenerator wireframeGenerator)
         {
             this.InitializeComponent();
 
             this.wireframeGenerator = wireframeGenerator;
-            this.verticesGenerator = verticesGenerator;
+            this.guiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             this.fileName = Path.GetFileName(filePath);
 
             try
             {
                 this.scene = sceneFactory.Create(deserializer.Deserialize(filePath));
-                
+
                 this.Model3DGroup.Children.Add(new GeometryModel3D
                 {
                     Geometry = this.scene.Geometry,
@@ -77,6 +75,50 @@ namespace ModelViewer3D
             {
                 ErrorHandler.ShowMessageBox(exception.Message);
                 this.Close();
+            }
+        }
+
+        private void BlockUI()
+        {
+            this.MenuFlyout.IsEnabled = false;
+            this.MenuButton.Visibility = Visibility.Hidden;
+            this.ViewPortPresenter.Visibility = Visibility.Hidden;
+            this.ProgressRing.Visibility = Visibility.Visible;
+        }
+
+        private void UnblockUI()
+        {
+            this.ProgressRing.Visibility = Visibility.Hidden;
+            this.ViewPortPresenter.Visibility = Visibility.Visible;
+            this.MenuButton.Visibility = Visibility.Visible;
+            this.MenuFlyout.IsEnabled = true;
+        }
+
+        private void ExecuteSync(Action action, Action complete)
+        {
+            this.ExecuteSync(null, action, complete);
+        }
+
+        private void ExecuteSync(Action before, Action action, Action complete)
+        {
+            try
+            {
+                if (before != null)
+                {
+                    // Executes before action.
+                    before();
+                }
+            }
+            finally
+            {
+                // Starts new task on thread pool.
+                Task task = Task.Factory.StartNew(action);
+
+                if (complete != null)
+                {
+                    // When task is completed execute complete on gui thread.
+                    task.ContinueWith(t => complete(), this.guiTaskScheduler);
+                }
             }
         }
 
@@ -109,7 +151,7 @@ namespace ModelViewer3D
         {
             this.isTracking = false;
         }
-        
+
         private void Window_MouseLeave(object sender, MouseEventArgs e)
         {
             this.isTracking = false;
@@ -127,6 +169,8 @@ namespace ModelViewer3D
 
         private void WireframeToggleSwitch_IsCheckedChanged(object sender, EventArgs e)
         {
+            this.BlockUI();
+
             if (this.WireframeToggleSwitch.IsChecked == true)
             {
                 if (this.wireframeModel3D == null)
@@ -144,27 +188,8 @@ namespace ModelViewer3D
             {
                 this.Model3DGroup.Children.Remove(this.wireframeModel3D);
             }
-        }
 
-        private void VerticesToggleSwitch_OnIsCheckedChanged(object sender, EventArgs e)
-        {
-            if (this.VerticesToggleSwitch.IsChecked == true)
-            {
-                if (this.positionsModel3D == null)
-                {
-                    this.positionsModel3D = new GeometryModel3D
-                    {
-                        Geometry = this.verticesGenerator.Generate(this.scene),
-                        Material = new DiffuseMaterial(Brushes.DimGray)
-                    };
-                }
-
-                this.Model3DGroup.Children.Add(this.positionsModel3D);
-            }
-            else if (this.positionsModel3D != null)
-            {
-                this.Model3DGroup.Children.Remove(this.positionsModel3D);
-            }
+            this.UnblockUI();
         }
 
         private void SaveImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
@@ -187,13 +212,21 @@ namespace ModelViewer3D
                 return;
             }
 
-            using (Stream fileStream = saveDialog.OpenFile())
-            {
-                BitmapSource bmp = ElementToBitmap(this.ViewPort, AvgDpi);
-                PngBitmapEncoder png = new PngBitmapEncoder();
-                png.Frames.Add(BitmapFrame.Create(bmp));
-                png.Save(fileStream);
-            }
+            // Must be executed on gui thread.
+            this.BlockUI();
+            BitmapSource bmp = ElementToBitmap(this.ViewPort, AvgDpi);
+
+            this.ExecuteSync(
+                action: () =>
+                {
+                    using (Stream fileStream = saveDialog.OpenFile())
+                    {
+                        PngBitmapEncoder png = new PngBitmapEncoder();
+                        png.Frames.Add(BitmapFrame.Create(bmp));
+                        png.Save(fileStream);
+                    }
+                },
+                complete: this.UnblockUI);
         }
 
         private void PrintImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
@@ -209,19 +242,21 @@ namespace ModelViewer3D
             {
                 return;
             }
+            
+            this.BlockUI();
 
             BitmapSource bitmap = ElementToBitmap(this.ViewPort);
 
             // Create Image element for hosting bitmap.
             Image img = new Image
             {
-                Source = bitmap, 
+                Source = bitmap,
                 Stretch = Stretch.None
             };
 
             // Get scale of the print to screen of WPF visual.
             double scale = Math.Min(
-                printDialog.PrintableAreaWidth / bitmap.Width, 
+                printDialog.PrintableAreaWidth / bitmap.Width,
                 printDialog.PrintableAreaHeight / bitmap.Height);
 
             //Transform the imgae to scale
@@ -235,9 +270,11 @@ namespace ModelViewer3D
             //update the layout of the visual to the printer page size.
             img.Measure(size);
             img.Arrange(new Rect(new Point(0, 0), size));
-            
+
             // Print the Image element.
             printDialog.PrintVisual(img, this.fileName);
+
+            this.UnblockUI();
         }
 
         private static BitmapSource ElementToBitmap(FrameworkElement element, Double dpi = HiResDpi)
@@ -253,6 +290,8 @@ namespace ModelViewer3D
                 PixelFormats.Default);
 
             bitmap.Render(element);
+            bitmap.Freeze();
+
             return bitmap;
         }
 
