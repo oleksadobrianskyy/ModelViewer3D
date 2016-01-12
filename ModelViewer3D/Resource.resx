@@ -126,4 +126,10 @@
   <data name="FileNameIsNotProvided" xml:space="preserve">
     <value>File name is not provided.</value>
   </data>
+  <data name="MainWindow_PrintImageLabel_MouseDown_Please_wait___" xml:space="preserve">
+    <value>Please wait...</value>
+  </data>
+  <data name="PleaseWait" xml:space="preserve">
+    <value>Please wait...</value>
+  </data>
 </root>

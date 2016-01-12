@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 using ModelViewer3D.Helpers;
@@ -13,21 +14,28 @@ namespace ModelViewer3D
         #if !DEBUG 
         static App()
         {
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            var executingAssembly = Assembly.GetExecutingAssembly();
+
+            var assemblyResources = executingAssembly
+                .GetManifestResourceNames()
+                .Where(resource => resource.EndsWith(".dll"));
+
+            foreach (var resource in assemblyResources)
             {
-                String resourceName = "ModelViewer3D.Libs." + new AssemblyName(args.Name).Name + ".dll";
-
-                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+                using (var stream = executingAssembly.GetManifestResourceStream(resource))
                 {
-                    if (stream == null)
-                    {
-                        return null;
-                    }
-
                     Byte[] assemblyData = new Byte[stream.Length];
                     stream.Read(assemblyData, 0, assemblyData.Length);
-                    return Assembly.Load(assemblyData);
+                    Assembly.Load(assemblyData);
                 }
+            }
+
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            {
+                String assemblyName = new AssemblyName(args.Name).Name;
+                var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+                return loadedAssemblies.FirstOrDefault(asm => asm.GetName().Name == assemblyName);
             };
         }
         #endif

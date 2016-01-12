@@ -61,8 +61,6 @@
                     </ModelVisual3D>
                 </Viewport3D>
             </Border>
-            <!-- ProgressRing -->
-            <controls:ProgressRing x:Name="ProgressRing" Visibility="Hidden" IsActive="True" />
         </Grid>
     </Page>
 </controls:MetroWindow>

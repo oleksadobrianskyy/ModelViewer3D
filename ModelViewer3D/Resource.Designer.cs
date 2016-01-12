@@ -86,5 +86,23 @@ namespace ModelViewer3D {
                 return ResourceManager.GetString("FileNameIsNotProvided", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please wait....
+        /// </summary>
+        internal static string MainWindow_PrintImageLabel_MouseDown_Please_wait___ {
+            get {
+                return ResourceManager.GetString("MainWindow_PrintImageLabel_MouseDown_Please_wait___", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please wait....
+        /// </summary>
+        internal static string PleaseWait {
+            get {
+                return ResourceManager.GetString("PleaseWait", resourceCulture);
+            }
+        }
     }
 }

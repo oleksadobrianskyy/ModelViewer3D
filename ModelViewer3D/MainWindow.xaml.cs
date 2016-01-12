@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
+using MahApps.Metro.Controls.Dialogs;
 using Microsoft.Win32;
 using ModelViewer3D.Core.MeshGeometryGenerators;
 using ModelViewer3D.Core.Scenes;
@@ -34,8 +35,6 @@ namespace ModelViewer3D
 
         private readonly IMeshGeometry3DGenerator wireframeGenerator;
 
-        private readonly TaskScheduler guiTaskScheduler;
-
         private readonly String fileName;
 
         private GeometryModel3D wireframeModel3D;
@@ -53,7 +52,6 @@ namespace ModelViewer3D
             this.InitializeComponent();
 
             this.wireframeGenerator = wireframeGenerator;
-            this.guiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             this.fileName = Path.GetFileName(filePath);
 
             try
@@ -75,50 +73,6 @@ namespace ModelViewer3D
             {
                 ErrorHandler.ShowMessageBox(exception.Message);
                 this.Close();
-            }
-        }
-
-        private void BlockUI()
-        {
-            this.MenuFlyout.IsEnabled = false;
-            this.MenuButton.Visibility = Visibility.Hidden;
-            this.ViewPortPresenter.Visibility = Visibility.Hidden;
-            this.ProgressRing.Visibility = Visibility.Visible;
-        }
-
-        private void UnblockUI()
-        {
-            this.ProgressRing.Visibility = Visibility.Hidden;
-            this.ViewPortPresenter.Visibility = Visibility.Visible;
-            this.MenuButton.Visibility = Visibility.Visible;
-            this.MenuFlyout.IsEnabled = true;
-        }
-
-        private void ExecuteSync(Action action, Action complete)
-        {
-            this.ExecuteSync(null, action, complete);
-        }
-
-        private void ExecuteSync(Action before, Action action, Action complete)
-        {
-            try
-            {
-                if (before != null)
-                {
-                    // Executes before action.
-                    before();
-                }
-            }
-            finally
-            {
-                // Starts new task on thread pool.
-                Task task = Task.Factory.StartNew(action);
-
-                if (complete != null)
-                {
-                    // When task is completed execute complete on gui thread.
-                    task.ContinueWith(t => complete(), this.guiTaskScheduler);
-                }
             }
         }
 
@@ -167,19 +121,21 @@ namespace ModelViewer3D
             this.MenuButton.Visibility = this.MenuFlyout.IsOpen ? Visibility.Hidden : Visibility.Visible;
         }
 
-        private void WireframeToggleSwitch_IsCheckedChanged(object sender, EventArgs e)
+        private async void WireframeToggleSwitch_IsCheckedChanged(object sender, EventArgs e)
         {
-            this.BlockUI();
-
             if (this.WireframeToggleSwitch.IsChecked == true)
             {
                 if (this.wireframeModel3D == null)
                 {
+                    var progressDialog = await this.ShowProgressAsync(Resource.PleaseWait, "Generating wireframe");
+
                     this.wireframeModel3D = new GeometryModel3D
                     {
                         Geometry = this.wireframeGenerator.Generate(this.scene),
                         Material = new DiffuseMaterial(Brushes.Black)
                     };
+
+                    await progressDialog.CloseAsync();
                 }
 
                 this.Model3DGroup.Children.Add(this.wireframeModel3D);
@@ -188,11 +144,9 @@ namespace ModelViewer3D
             {
                 this.Model3DGroup.Children.Remove(this.wireframeModel3D);
             }
-
-            this.UnblockUI();
         }
 
-        private void SaveImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
+        private async void SaveImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton != MouseButtonState.Pressed)
             {
@@ -211,25 +165,25 @@ namespace ModelViewer3D
             {
                 return;
             }
+            
+            var progressDialog = await this.ShowProgressAsync(Resource.PleaseWait, "Saving image");
 
-            // Must be executed on gui thread.
-            this.BlockUI();
             BitmapSource bmp = ElementToBitmap(this.ViewPort, AvgDpi);
 
-            this.ExecuteSync(
-                action: () =>
+            await Task.Factory.StartNew(() =>
+            {
+                using (Stream fileStream = saveDialog.OpenFile())
                 {
-                    using (Stream fileStream = saveDialog.OpenFile())
-                    {
-                        PngBitmapEncoder png = new PngBitmapEncoder();
-                        png.Frames.Add(BitmapFrame.Create(bmp));
-                        png.Save(fileStream);
-                    }
-                },
-                complete: this.UnblockUI);
+                    PngBitmapEncoder png = new PngBitmapEncoder();
+                    png.Frames.Add(BitmapFrame.Create(bmp));
+                    png.Save(fileStream);
+                }
+            });
+
+            await progressDialog.CloseAsync();
         }
 
-        private void PrintImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
+        private async void PrintImageLabel_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton != MouseButtonState.Pressed)
             {
@@ -242,8 +196,8 @@ namespace ModelViewer3D
             {
                 return;
             }
-            
-            this.BlockUI();
+
+            var progressDialog = await this.ShowProgressAsync(Resource.PleaseWait, "Printing image");
 
             BitmapSource bitmap = ElementToBitmap(this.ViewPort);
 
@@ -274,7 +228,7 @@ namespace ModelViewer3D
             // Print the Image element.
             printDialog.PrintVisual(img, this.fileName);
 
-            this.UnblockUI();
+            await progressDialog.CloseAsync();
         }
 
         private static BitmapSource ElementToBitmap(FrameworkElement element, Double dpi = HiResDpi)
