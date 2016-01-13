@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Windows.Media.Media3D;
 using ModelViewer3D.Core.Manipulators;
+using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Core.Scenes
 {
     public interface IScene
     {
-        MeshGeometry3D Geometry { get; }
+        Mesh Mesh { get;  }
+
+        MeshGeometry3D Geometry3D { get; }
 
         Point3D Center { get; }
 

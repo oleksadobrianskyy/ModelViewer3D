@@ -12,7 +12,7 @@ namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
         public MeshGeometry3D Generate(IScene scene)
         {
             return WireframeHelper.ToWireframe(
-                scene.Geometry, 
+                scene.Geometry3D, 
                 scene.Radius*LineScale);
         }
     }

@@ -60,7 +60,7 @@ namespace ModelViewer3D
 
                 this.Model3DGroup.Children.Add(new GeometryModel3D
                 {
-                    Geometry = this.scene.Geometry,
+                    Geometry = this.scene.Geometry3D,
                     Material = new DiffuseMaterial(Brushes.LightGray),
                     BackMaterial = new DiffuseMaterial(Brushes.LightGray)
                 });
