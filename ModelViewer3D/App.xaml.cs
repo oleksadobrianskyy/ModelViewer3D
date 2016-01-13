@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using ModelViewer3D.Helpers;
+using ModelViewer3D.Resources;
 
 namespace ModelViewer3D
 {

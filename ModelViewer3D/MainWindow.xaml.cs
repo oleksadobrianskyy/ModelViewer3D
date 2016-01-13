@@ -13,6 +13,7 @@ using ModelViewer3D.Core.MeshGeometryGenerators;
 using ModelViewer3D.Core.Scenes;
 using ModelViewer3D.Deserializers;
 using ModelViewer3D.Helpers;
+using ModelViewer3D.Resources;
 
 namespace ModelViewer3D
 {

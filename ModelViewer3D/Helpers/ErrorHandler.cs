@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using ModelViewer3D.Resources;
 
 namespace ModelViewer3D.Helpers
 {
