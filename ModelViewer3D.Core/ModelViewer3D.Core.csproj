@@ -70,7 +70,6 @@
   <ItemGroup>
     <Compile Include="Scenes\ISceneFactory.cs" />
     <Compile Include="Scenes\Impl\SceneFactory.cs" />
-    <Compile Include="Helpers\WireframeHelper.cs" />
     <Compile Include="MeshConverters\IMeshConverter.cs" />
     <Compile Include="MeshConverters\Impl\MeshConverter.cs" />
     <Compile Include="Scenes\IScene.cs" />

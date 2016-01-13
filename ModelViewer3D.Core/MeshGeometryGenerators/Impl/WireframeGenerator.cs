@@ -84,21 +84,7 @@ namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
                 AddSegment(wireframe, mesh.Positions[fromIndex], mesh.Positions[toIndex], thickness);
             }
 
-            private static void AddTriangle(MeshGeometry3D mesh, Point3D point1, Point3D point2, Point3D point3)
-            {
-                // Create the points.
-                var index = mesh.Positions.Count;
-                mesh.Positions.Add(point1);
-                mesh.Positions.Add(point2);
-                mesh.Positions.Add(point3);
-
-                // Create the triangle.
-                mesh.TriangleIndices.Add(index++);
-                mesh.TriangleIndices.Add(index++);
-                mesh.TriangleIndices.Add(index);
-            }
-
-            private static void AddSegment(MeshGeometry3D mesh, Point3D point1, Point3D point2, Double thickness, Boolean extend = false)
+            private static void AddSegment(MeshGeometry3D mesh, Point3D point1, Point3D point2, Double thickness)
             {
                 // Find an up vector that is not colinear with the segment.
                 // Start with a vector parallel to the Y axis.
@@ -115,21 +101,10 @@ namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
                 }
 
                 // Add the segment.
-                AddSegment(mesh, point1, point2, up, thickness, extend);
-            }
-
-            private static void AddSegment(MeshGeometry3D mesh, Point3D point1, Point3D point2, Vector3D up, Double thickness, Boolean extend)
-            {
+                Point3D point3 = point1;
+                Point3D point4 = point2;
                 // Get the segment's vector.
-                var v = point2 - point1;
-
-                if (extend)
-                {
-                    // Increase the segment's length on both ends by thickness / 2.
-                    var n = ScaleVector(v, thickness / 2);
-                    point1 -= n;
-                    point2 += n;
-                }
+                var v = point4 - point3;
 
                 // Get the scaled up vector.
                 var n1 = ScaleVector(up, thickness / 2);
@@ -139,15 +114,15 @@ namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
                 n2 = ScaleVector(n2, thickness / 2);
 
                 // Make a skinny box.
-                var p11 = point1 + n1 + n2;
-                var p12 = point1 - n1 + n2;
-                var p13 = point1 + n1 - n2;
-                var p14 = point1 - n1 - n2;
+                var p11 = point3 + n1 + n2;
+                var p12 = point3 - n1 + n2;
+                var p13 = point3 + n1 - n2;
+                var p14 = point3 - n1 - n2;
 
-                var p21 = point2 + n1 + n2;
-                var p22 = point2 - n1 + n2;
-                var p23 = point2 + n1 - n2;
-                var p24 = point2 - n1 - n2;
+                var p21 = point4 + n1 + n2;
+                var p22 = point4 - n1 + n2;
+                var p23 = point4 + n1 - n2;
+                var p24 = point4 - n1 - n2;
 
                 // Sides.
                 AddTriangle(mesh, p11, p12, p22);
@@ -170,10 +145,23 @@ namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
                 AddTriangle(mesh, p21, p24, p23);
             }
 
+            private static void AddTriangle(MeshGeometry3D mesh, Point3D point1, Point3D point2, Point3D point3)
+            {
+                // Create the points.
+                var index = mesh.Positions.Count;
+                mesh.Positions.Add(point1);
+                mesh.Positions.Add(point2);
+                mesh.Positions.Add(point3);
+
+                // Create the triangle.
+                mesh.TriangleIndices.Add(index++);
+                mesh.TriangleIndices.Add(index++);
+                mesh.TriangleIndices.Add(index);
+            }
+
             private static Vector3D ScaleVector(Vector3D vector, double length)
             {
-                var scale = length / vector.Length;
-                return new Vector3D(vector.X * scale, vector.Y * scale, vector.Z * scale);
+                return (vector / vector.Length) * length;
             }
         } 
     }
