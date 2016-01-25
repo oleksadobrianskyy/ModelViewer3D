@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,8 +10,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using MahApps.Metro.Controls.Dialogs;
+using Microsoft.Practices.ServiceLocation;
 using Microsoft.Win32;
-using ModelViewer3D.Core.MeshGeometryGenerators;
+using ModelViewer3D.Core.MeshGeometry3DGenerators;
 using ModelViewer3D.Core.Scenes;
 using ModelViewer3D.Deserializers;
 using ModelViewer3D.Helpers;
@@ -20,9 +23,11 @@ namespace ModelViewer3D
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow
+    public sealed partial class MainWindow
     {
         #region Constants
+
+        private const String CommandLineSeparator = " ";
 
         private const Int32 DefaultDpi = 96;
 
@@ -34,9 +39,9 @@ namespace ModelViewer3D
 
         private readonly IScene scene;
 
-        private readonly IMeshGeometry3DGenerator wireframeGenerator;
+        private readonly IWireframeGenerator wireframeGenerator;
 
-        private readonly String fileName;
+        private readonly String filePath;
 
         private GeometryModel3D wireframeModel3D;
 
@@ -44,31 +49,48 @@ namespace ModelViewer3D
 
         private Point prevPosition;
 
-        public MainWindow(
-            String filePath,
-            IMeshDeserializer deserializer,
-            ISceneFactory sceneFactory,
-            IMeshGeometry3DGenerator wireframeGenerator)
+        public MainWindow()
         {
             this.InitializeComponent();
 
-            this.wireframeGenerator = wireframeGenerator;
-            this.fileName = Path.GetFileName(filePath);
+            IServiceLocator serviceLocator = ServiceLocator.Current;
+            IMeshDeserializer deserializer = serviceLocator.GetInstance<IMeshDeserializer>();
+            ISceneFactory sceneFactory = serviceLocator.GetInstance<ISceneFactory>();
+            this.wireframeGenerator = serviceLocator.GetInstance<IWireframeGenerator>();
+            
+            String[] args = Environment.GetCommandLineArgs();
+
+            if (args.Length == 1)
+            {
+                ErrorHandler.ShowMessageBox(Resource.FileNameIsNotProvided);
+                this.Close();
+                return;
+            }
+
+            /*  
+            if (args.Length > 2)
+            {
+                String exePath = args[0];
+                String restArgs = String.Join(MainWindow.CommandLineSeparator, args.Skip(2));
+                Process.Start(exePath, restArgs);
+            }
+            */
 
             try
             {
-                this.scene = sceneFactory.Create(deserializer.Deserialize(filePath));
+                this.filePath = args[1];
+                this.scene = sceneFactory.Create(deserializer.Deserialize(this.filePath));
 
                 this.Model3DGroup.Children.Add(new GeometryModel3D
                 {
-                    Geometry = this.scene.Geometry3D,
+                    Geometry = this.scene.MeshGeometry3D,
                     Material = new DiffuseMaterial(Brushes.LightGray),
                     BackMaterial = new DiffuseMaterial(Brushes.LightGray)
                 });
 
                 this.ViewPort.Camera = this.scene.CameraManipulator.Camera;
 
-                this.Title = Resource.AppName + " - " + this.fileName;
+                this.Title = Resource.AppName + " - " + Path.GetFileName(this.filePath);
             }
             catch (Exception exception)
             {
@@ -156,7 +178,7 @@ namespace ModelViewer3D
 
             SaveFileDialog saveDialog = new SaveFileDialog
             {
-                FileName = Path.GetFileNameWithoutExtension(this.fileName),
+                FileName = Path.GetFileNameWithoutExtension(this.filePath),
                 Filter = "png files (*.png)|*.png",
                 FilterIndex = 1,
                 RestoreDirectory = true
@@ -227,7 +249,7 @@ namespace ModelViewer3D
             img.Arrange(new Rect(new Point(0, 0), size));
 
             // Print the Image element.
-            printDialog.PrintVisual(img, this.fileName);
+            printDialog.PrintVisual(img, Path.GetFileName(this.filePath));
 
             await progressDialog.CloseAsync();
         }

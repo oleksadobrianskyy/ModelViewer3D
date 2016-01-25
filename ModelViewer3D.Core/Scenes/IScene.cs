@@ -9,7 +9,9 @@ namespace ModelViewer3D.Core.Scenes
     {
         Mesh Mesh { get;  }
 
-        MeshGeometry3D Geometry3D { get; }
+        MeshGeometry3D MeshGeometry3D { get; }
+
+        MeshGeometry3D WireframeGeometry3D { get; }
 
         Point3D Center { get; }
 

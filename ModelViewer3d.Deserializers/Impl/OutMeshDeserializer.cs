@@ -8,7 +8,7 @@ using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Deserializers.Impl
 {
-    public class OutMeshDeserializer : IMeshDeserializer
+    public sealed class OutMeshDeserializer : IMeshDeserializer
     {
         private class Segment
         {

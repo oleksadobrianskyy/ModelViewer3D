@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ModelViewer3D.Models
 {
-    public class Triangle : MeshElement
+    public sealed class Triangle : MeshElement
     {
         public Int32 X1 { get; set; }
 

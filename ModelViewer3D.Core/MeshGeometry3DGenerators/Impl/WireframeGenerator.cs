@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Windows.Media.Media3D;
 using ModelViewer3D.Core.Scenes;
 
-namespace ModelViewer3D.Core.MeshGeometryGenerators.Impl
+namespace ModelViewer3D.Core.MeshGeometry3DGenerators.Impl
 {
-    public partial class WireframeGenerator : IMeshGeometry3DGenerator
+    public sealed partial class WireframeGenerator : IWireframeGenerator
     {
         private const double LineScale = 2E-3;
 
         public MeshGeometry3D Generate(IScene scene)
         {
             return WireframeHelper.ToWireframe(
-                scene.Geometry3D, 
+                scene.MeshGeometry3D, 
                 scene.Radius*LineScale);
         }
     }
 
-    public partial class WireframeGenerator
+    public sealed partial class WireframeGenerator
     {
         private static class WireframeHelper
         {

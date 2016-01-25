@@ -1,20 +1,25 @@
 ﻿using System;
+using System.Threading;
 using System.Windows.Media.Media3D;
+using Microsoft.Practices.ServiceLocation;
 using ModelViewer3D.Core.Manipulators;
 using ModelViewer3D.Core.MeshConverters;
+using ModelViewer3D.Core.MeshGeometry3DGenerators;
 using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Core.Scenes.Impl
 {
-    public class Scene : IScene
+    public sealed class Scene : IScene
     {
         private readonly Mesh mesh;
 
-        private readonly MeshGeometry3D geometry3D;
+        private readonly MeshGeometry3D meshGeometry3D;
 
         private readonly Point3D center;
 
         private readonly Double radius;
+
+        private readonly Lazy<MeshGeometry3D> wireframeGeometry3D;
 
         #region Mesh Properties
 
@@ -23,9 +28,14 @@ namespace ModelViewer3D.Core.Scenes.Impl
             get { return this.mesh; }
         }
 
-        public MeshGeometry3D Geometry3D
+        public MeshGeometry3D MeshGeometry3D
         {
-            get { return this.geometry3D; }
+            get { return this.meshGeometry3D; }
+        }
+
+        public MeshGeometry3D WireframeGeometry3D
+        {
+            get { return this.wireframeGeometry3D.Value; }
         }
 
         public Point3D Center
@@ -50,12 +60,18 @@ namespace ModelViewer3D.Core.Scenes.Impl
 
         #endregion
 
-        public Scene(Mesh mesh, IMeshConverter meshConverter)
+        public Scene(Mesh mesh)
         {
+            IServiceLocator serviceLocator = ServiceLocator.Current;
+
+            IMeshConverter meshConverter = serviceLocator.GetInstance<IMeshConverter>();
+            IWireframeGenerator wireframeGenerator = serviceLocator.GetInstance<IWireframeGenerator>();
+            
             this.mesh = mesh;
-            this.geometry3D = meshConverter.ToMeshGeometry3D(this.mesh);
-            this.center = this.Geometry3D.Bounds.Location + 0.5 * (Vector3D)this.Geometry3D.Bounds.Size;
-            this.radius = 0.5*((Vector3D) this.geometry3D.Bounds.Size).Length;
+            this.meshGeometry3D = meshConverter.ToMeshGeometry3D(this.mesh);
+            this.center = this.MeshGeometry3D.Bounds.Location + 0.5 * (Vector3D)this.MeshGeometry3D.Bounds.Size;
+            this.radius = 0.5*((Vector3D) this.meshGeometry3D.Bounds.Size).Length;
+            this.wireframeGeometry3D = new Lazy<MeshGeometry3D>(() => wireframeGenerator.Generate(this), LazyThreadSafetyMode.PublicationOnly);
         }
     }
 }

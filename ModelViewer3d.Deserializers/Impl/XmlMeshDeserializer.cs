@@ -4,7 +4,7 @@ using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Deserializers.Impl
 {
-    public class XmlMeshDeserializer : IMeshDeserializer
+    public sealed class XmlMeshDeserializer : IMeshDeserializer
     {
         private readonly XmlSerializer serializer = new XmlSerializer(typeof (Mesh));
 

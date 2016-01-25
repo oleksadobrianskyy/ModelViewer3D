@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Practices.ServiceLocation;
 using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Deserializers.Impl
 {
-    public class FileExtensionMeshDeserializer : IMeshDeserializer
+    public sealed class FileExtensionMeshDeserializer : IMeshDeserializer
     {
         private readonly Dictionary<String, IMeshDeserializer> extensionDeserializers;
 
         public FileExtensionMeshDeserializer()
         {
+            IServiceLocator serviceLocator = ServiceLocator.Current;
+
             this.extensionDeserializers = new Dictionary<string, IMeshDeserializer>
             {
-                {".out", new OutMeshDeserializer()},
-                {".xml", new XmlMeshDeserializer()}
+                {".out", serviceLocator.GetInstance<IMeshDeserializer>("out") },
+                {".xml", serviceLocator.GetInstance<IMeshDeserializer>("xml") }
             };
         }
 

@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-using ModelViewer3D.Helpers;
-using ModelViewer3D.Resources;
+using Microsoft.Practices.ServiceLocation;
+using Microsoft.Practices.Unity;
 
 namespace ModelViewer3D
 {
@@ -12,8 +12,21 @@ namespace ModelViewer3D
     /// </summary>
     public partial class App : Application
     {
-        #if !DEBUG 
+        static partial void LoadEmbeddedAssemblies();
+
+        static partial void RegisterServiceLocator();
+
         static App()
+        {
+            App.LoadEmbeddedAssemblies();
+            App.RegisterServiceLocator();
+        }
+    }
+    
+    #if !DEBUG 
+    public partial class App
+    {
+        static partial void LoadEmbeddedAssemblies()
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
 
@@ -39,30 +52,16 @@ namespace ModelViewer3D
                 return loadedAssemblies.FirstOrDefault(asm => asm.GetName().Name == assemblyName);
             };
         }
-        #endif
+    }
+    #endif
 
-        private void App_OnStartup(object sender, StartupEventArgs e)
+    public partial class App
+    {
+        static partial void RegisterServiceLocator()
         {
-            if (e.Args.Length == 0)
-            {
-                ErrorHandler.ShowMessageBox(Resource.FileNameIsNotProvided);
-                this.Shutdown();
-            }
-            else if (e.Args.Length == 1)
-            {
-                String filePath = e.Args[0];
-                MainWindow window = new MainWindow(
-                    filePath, 
-                    ServiceLocator.MeshDeserializer, 
-                    ServiceLocator.SceneFactory, 
-                    ServiceLocator.WireframeGenerator);
-                window.Show();
-            }
-            else
-            {
-                ErrorHandler.ShowMessageBox(Resource.CanOpenOnlyOneFile);
-                this.Shutdown();
-            }
+            IUnityContainer container = UnityBootstraper.RegisterTypes();
+            IServiceLocator serviceLocator = new UnityServiceLocator(container);
+            ServiceLocator.SetLocatorProvider(() => serviceLocator);
         }
     }
 }

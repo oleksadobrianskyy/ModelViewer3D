@@ -5,7 +5,7 @@ using ModelViewer3D.Core.Scenes;
 
 namespace ModelViewer3D.Core.Manipulators.Impl
 {
-    public class CameraManipulator : ICameraManipulator
+    public sealed class CameraManipulator : ICameraManipulator
     {
         private readonly IScene scene;
 

@@ -5,7 +5,7 @@ using ModelViewer3D.Models;
 
 namespace ModelViewer3D.Core.MeshConverters.Impl
 {
-    public class MeshConverter : IMeshConverter
+    public sealed class MeshConverter : IMeshConverter
     {
         public MeshGeometry3D ToMeshGeometry3D(Mesh mesh)
         {

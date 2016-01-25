@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 
 namespace ModelViewer3D.Models
 {
-    public class Mesh
+    public sealed class Mesh
     {
         public List<Point3D> Points { get; set; }
 
