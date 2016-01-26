@@ -37,8 +37,6 @@ namespace ModelViewer3D
 
         #endregion
 
-        private readonly IScene scene;
-
         private readonly IWireframeGenerator wireframeGenerator;
 
         private readonly String filePath;
@@ -48,6 +46,8 @@ namespace ModelViewer3D
         private Boolean isTracking;
 
         private Point prevPosition;
+
+        public IScene Scene { get; private set; }
 
         public MainWindow()
         {
@@ -79,16 +79,16 @@ namespace ModelViewer3D
             try
             {
                 this.filePath = args[1];
-                this.scene = sceneFactory.Create(deserializer.Deserialize(this.filePath));
+                this.Scene = sceneFactory.Create(deserializer.Deserialize(this.filePath));
 
                 this.Model3DGroup.Children.Add(new GeometryModel3D
                 {
-                    Geometry = this.scene.MeshGeometry3D,
+                    Geometry = this.Scene.MeshGeometry3D,
                     Material = new DiffuseMaterial(Brushes.LightGray),
                     BackMaterial = new DiffuseMaterial(Brushes.LightGray)
                 });
 
-                this.ViewPort.Camera = this.scene.CameraManipulator.Camera;
+                this.ViewPort.Camera = this.Scene.CameraManipulator.Camera;
 
                 this.Title = Resource.AppName + " - " + Path.GetFileName(this.filePath);
             }
@@ -101,7 +101,7 @@ namespace ModelViewer3D
 
         private void ViewPort_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            this.scene.ZoomManipulator.ZoomIn(e.Delta / Mouse.MouseWheelDeltaForOneLine);
+            this.Scene.ZoomManipulator.ZoomIn(e.Delta / Mouse.MouseWheelDeltaForOneLine);
         }
 
         private void Window_MouseMove(object sender, MouseEventArgs e)
@@ -112,7 +112,7 @@ namespace ModelViewer3D
             }
 
             Point currPosition = e.GetPosition(null);
-            this.scene.RotationManipulator.Rotate(
+            this.Scene.RotationManipulator.Rotate(
                 Constants.ScaleX * (this.prevPosition.X - currPosition.X),
                 Constants.ScaleY * (this.prevPosition.Y - currPosition.Y));
             this.prevPosition = currPosition;
@@ -154,7 +154,7 @@ namespace ModelViewer3D
 
                     this.wireframeModel3D = new GeometryModel3D
                     {
-                        Geometry = this.wireframeGenerator.Generate(this.scene),
+                        Geometry = this.wireframeGenerator.Generate(this.Scene),
                         Material = new DiffuseMaterial(Brushes.Black)
                     };
 
@@ -281,12 +281,22 @@ namespace ModelViewer3D
 
             if (e.Key == Key.Add || e.Key == Key.OemPlus)
             {
-                this.scene.ZoomManipulator.ZoomIn(1);
+                this.Scene.ZoomManipulator.ZoomIn(1);
             }
             else if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
             {
-                this.scene.ZoomManipulator.ZoomIn(-1);
+                this.Scene.ZoomManipulator.ZoomIn(-1);
             }
+        }
+
+        private void ZoomOutButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Scene.ZoomManipulator.ZoomIn(-1);
+        }
+
+        private void ZoomInButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Scene.ZoomManipulator.ZoomIn(1);
         }
     }
 }

@@ -4,19 +4,30 @@
         xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
         Title="ModelViewer3D" Height="350" Width="525" MinHeight="320" MinWidth="480"
         ResizeMode="CanResizeWithGrip" BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
-        KeyDown="MainWindow_KeyDown">
+        KeyDown="MainWindow_KeyDown"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <!-- Styles -->
     <Window.Resources>
-        <Style x:Key="LabelButtonStyle" TargetType="{x:Type Label}">
-            <Setter Property="Foreground" Value="#B5B5B5"/>
-            <Setter Property="FontSize" Value="16"></Setter>
-            <Setter Property="FontWeight" Value="DemiBold"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/Icons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="LabelButtonStyle" TargetType="{x:Type Label}">
+                <Setter Property="Foreground" Value="#B5B5B5"/>
+                <Setter Property="FontSize" Value="16"></Setter>
+                <Setter Property="FontWeight" Value="DemiBold"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="White"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="LabelStaticStyle" TargetType="{x:Type Label}">
+                <Setter Property="Foreground" Value="#B5B5B5"/>
+                <Setter Property="FontSize" Value="16"></Setter>
+                <Setter Property="FontWeight" Value="DemiBold"/>
+            </Style>
+        </ResourceDictionary>
     </Window.Resources>
     <!-- Commands -->
     <controls:MetroWindow.RightWindowCommands>
@@ -28,11 +39,44 @@
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl>
             <controls:Flyout Name="MenuFlyout" IsPinned="False" Header="Menu" Position="Right" Width="200" IsOpenChanged="MenuFlyout_IsOpenChanged">
-                <StackPanel Orientation="Vertical">
-                    <controls:ToggleSwitch Name="WireframeToggleSwitch" Header="Wireframe" Margin="20, 5" IsCheckedChanged="WireframeToggleSwitch_IsCheckedChanged" />
-                    <Label x:Name="SaveImageLabel" Margin="15, 5, 20, 5" Style="{DynamicResource LabelButtonStyle}" MouseDown="SaveImageLabel_MouseDown">Save Image</Label>
-                    <Label x:Name="PrintImageLabel" Margin="15, 5, 20, 5" Style="{DynamicResource LabelButtonStyle}" MouseDown="PrintImageLabel_MouseDown" >Print Image</Label>
-                </StackPanel>
+                <Grid>
+                    <StackPanel Orientation="Vertical">
+                        <controls:ToggleSwitch Name="WireframeToggleSwitch" Header="Wireframe" Margin="20, 5" IsCheckedChanged="WireframeToggleSwitch_IsCheckedChanged" />
+                        <Label x:Name="SaveImageLabel" Margin="15, 5, 20, 5" Style="{DynamicResource LabelButtonStyle}" MouseDown="SaveImageLabel_MouseDown">Save Image</Label>
+                        <Label x:Name="PrintImageLabel" Margin="15, 5, 20, 5" Style="{DynamicResource LabelButtonStyle}" MouseDown="PrintImageLabel_MouseDown" >Print Image</Label>
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Bottom">
+                        <Label Margin="15, 5, 20, 0" Style="{DynamicResource LabelStaticStyle}" >Zoom:</Label>
+                        <StackPanel Margin="15, 0, 20, 10" Orientation="Horizontal">
+                            <Button x:Name="ZoomOutButton" 
+                                    Width="30"
+                                    Height="30"
+                                    Style="{DynamicResource MetroCircleButtonStyle}" 
+                                    Click="ZoomOutButton_Click">
+                                <Rectangle Width="10" Height="2">
+                                    <Rectangle.Fill>
+                                        <VisualBrush Visual="{StaticResource appbar_minus}" />
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Button>
+                            <Label 
+                                Content="{Binding Path=Scene.ZoomManipulator.Zoom}" 
+                                ContentStringFormat="{}{0}%"
+                                Style="{DynamicResource LabelStaticStyle}" />
+                            <Button x:Name="ZoomInButton" 
+                                    Width="30"
+                                    Height="30"
+                                    Style="{DynamicResource MetroCircleButtonStyle}" 
+                                    Click="ZoomInButton_Click">
+                                <Rectangle Width="10" Height="10">
+                                    <Rectangle.Fill>
+                                        <VisualBrush Visual="{StaticResource appbar_add}" />
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
             </controls:Flyout>
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>

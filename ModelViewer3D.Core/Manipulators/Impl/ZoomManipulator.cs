@@ -1,11 +1,13 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Media.Media3D;
 using ModelViewer3D.Core.Helpers;
 using ModelViewer3D.Core.Scenes;
 
 namespace ModelViewer3D.Core.Manipulators.Impl
 {
-    public sealed class ZoomManipulator : IZoomManipulator
+    public sealed class ZoomManipulator : IZoomManipulator, INotifyPropertyChanged
     {
         private readonly IScene scene;
 
@@ -31,6 +33,8 @@ namespace ModelViewer3D.Core.Manipulators.Impl
         {
             get { return (Int32) (100*this.initialDistance/this.maxDistance); }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public ZoomManipulator(IScene scene)
         {
@@ -62,6 +66,8 @@ namespace ModelViewer3D.Core.Manipulators.Impl
 
             camVector = camDistance*(camVector/camVector.Length);
             this.scene.CameraManipulator.Position = this.scene.Center + camVector;
+
+            this.OnPropertyChanged("Zoom");
         }
 
         public void UnZoom()
@@ -74,6 +80,8 @@ namespace ModelViewer3D.Core.Manipulators.Impl
             Vector3D camVector = this.scene.CameraManipulator.Position - this.scene.Center;
             camVector = this.initialDistance*(camVector/camVector.Length);
             this.scene.CameraManipulator.Position = this.scene.Center + camVector;
+
+            this.OnPropertyChanged("Zoom");
         }
 
         #region Private members
@@ -81,6 +89,16 @@ namespace ModelViewer3D.Core.Manipulators.Impl
         private Double GetDistanceToCamera()
         {
             return (this.scene.CameraManipulator.Position - this.scene.Center).Length;
+        }
+        
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
 
         #endregion
